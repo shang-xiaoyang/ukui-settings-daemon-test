@@ -13,7 +13,7 @@
 
 #include <glib.h>
 #include <gdk/gdk.h>
-
+#include "xeventmonitor.h"
 #include "keyboard-xkb.h"
 
 #ifdef HAVE_X11_EXTENSIONS_XF86MISC_H
@@ -42,10 +42,12 @@ public:
     bool KeyboardManagerStart();
     void KeyboardManagerStop ();
     void usd_keyboard_manager_apply_settings(KeyboardManager *manager);
+    void numlock_install_xkb_callback ();
 
 public Q_SLOTS:
     void start_keyboard_idle_cb ();
     void apply_settings  (QString);
+    void XkbEventsFilter(int keyCode);
 
 private:
     friend void numlock_xkb_init (KeyboardManager *manager);
@@ -54,14 +56,7 @@ private:
     friend void apply_repeat     (KeyboardManager *manager);
 
     friend void numlock_install_xkb_callback (KeyboardManager *manager);
-    friend GdkFilterReturn xkb_events_filter (GdkXEvent *xev_,
-                                              GdkEvent  *gdkev_,
-                                              gpointer   user_data);
 
-/*
-protected:
-    bool eventFilter(QObject *watched, QEvent *event);
-*/
 private:
     QTimer                 *time;
     static KeyboardManager *mKeyboardManager;
