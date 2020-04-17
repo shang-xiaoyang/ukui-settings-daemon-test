@@ -1,7 +1,6 @@
 #include "keyboard-manager.h"
 #include "clib-syslog.h"
 #include "config.h"
-#include <QWidget>
 
 #define USD_KEYBOARD_SCHEMA  "org.ukui.peripherals-keyboard"
 #define KEY_REPEAT           "repeat"
@@ -153,7 +152,7 @@ static void numlock_set_xkb_state (NumLockState new_state)
     if (new_state != NUMLOCK_STATE_ON && new_state != NUMLOCK_STATE_OFF)
             return;
     num_mask = numlock_NumLock_modifier_mask ();
-    //syslog(LOG_ERR,"new_state  = %d",new_state ? num_mask : 0);
+    syslog(LOG_ERR,"new_state  = %d",new_state ? num_mask : 0);
     XkbLockModifiers (dpy, XkbUseCoreKbd, num_mask, new_state ? num_mask : 0);
 }
 
@@ -298,22 +297,22 @@ void KeyboardManager::apply_settings (QString keys)
                 qDebug ("Bell setting '%s' changed, applying bell settings", key);
                 apply_bell (this);
 
-        } else if (keys.compare(QString::fromLocal8Bit(KEY_NUMLOCK_REMEMBER)) == 0) {
-                qDebug ("Remember Num-Lock state '%s' changed, applying num-lock settings", key);
-                apply_numlock (this);
+    } else if (keys.compare(QString::fromLocal8Bit(KEY_NUMLOCK_REMEMBER)) == 0) {
+            qDebug ("Remember Num-Lock state '%s' changed, applying num-lock settings", key);
+            apply_numlock (this);
 
-        } else if (keys.compare(QString::fromLocal8Bit(KEY_NUMLOCK_STATE)) == 0) {
-                qDebug ("Num-Lock state '%s' changed, will apply at next startup", key);
+    } else if (keys.compare(QString::fromLocal8Bit(KEY_NUMLOCK_STATE)) == 0) {
+            qDebug ("Num-Lock state '%s' changed, will apply at next startup", key);
 
-        } else if (keys.compare(QString::fromLocal8Bit(KEY_REPEAT)) == 0 ||
-                   keys.compare(QString::fromLocal8Bit(KEY_RATE)) == 0 ||
-                   keys.compare(QString::fromLocal8Bit(KEY_DELAY)) == 0) {
-                qDebug ("Key repeat setting '%s' changed, applying key repeat settings", key);
-                apply_repeat (this);
+    } else if (keys.compare(QString::fromLocal8Bit(KEY_REPEAT)) == 0 ||
+               keys.compare(QString::fromLocal8Bit(KEY_RATE)) == 0 ||
+               keys.compare(QString::fromLocal8Bit(KEY_DELAY)) == 0) {
+            qDebug ("Key repeat setting '%s' changed, applying key repeat settings", key);
+            apply_repeat (this);
 
-        } else {
-                qWarning ("Unhandled settings change, key '%s'", key);
-        }
+    } else {
+            qWarning ("Unhandled settings change, key '%s'", key);
+    }
 }
 
 void KeyboardManager::usd_keyboard_manager_apply_settings (KeyboardManager *manager)

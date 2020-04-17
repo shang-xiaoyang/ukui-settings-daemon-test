@@ -11,8 +11,6 @@
 #include <QGSettings/qgsettings.h>
 #include <QApplication>
 
-#include <glib.h>
-#include <gdk/gdk.h>
 #include "xeventmonitor.h"
 #include "keyboard-xkb.h"
 
@@ -61,7 +59,7 @@ private:
     QTimer                 *time;
     static KeyboardManager *mKeyboardManager;
     static KeyboardXkb     *mKeyXkb;
-    gboolean                have_xkb;
+    bool                    have_xkb;
     int                     xkb_event_base;
     QGSettings             *settings;
     int                     old_state;
