@@ -28,7 +28,7 @@ debuild -D
 
 > 选中表示确定可正常运行
 
-- [ v ] a11y-settings
+- [x] a11y-settings
 - [ ] background
 - [ ] clipboard
 - [ ] datetime
