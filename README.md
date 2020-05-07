@@ -1,5 +1,13 @@
 ## ukui-setting-daemon 重构
 
+### 目前任务
+解决９个有问题中的三个
+- housekeeping:商晓阳，5.9完成此插件（目标：功能全部测试可用，代码构建完成，对模块和功能全面理解）
+- media-key：丁敬，暂时在专用机，回到项目后两周完成media-key插件.（目标：功能全部测试可用，代码构建完成，对模块和功能全面理解）
+
+- datetime: 跟长沙李天智沟通之后，已经确定丢弃该插件
+- sound: 二次改动较少，已经修改并提交，已经验证其功能(发现系统/用户的声音主题更改后调用pulseaudio库进行缓存更新)
+
 ### 项目安装依赖
 
 1. git clone ...
@@ -27,31 +35,37 @@ debuild -D
 ### 插件进度
 
 > 选中表示确定可正常运行
-
+- [ ] a11y-keyboard
 - [x] a11y-settings
-- [ ] background
-- [ ] clipboard
-- [ ] datetime
-- [ ] keyboard
+- [x] background
+- [x] clipboard
+- [x] common
+- [x] datetime
+- [x] dummy
+- [ ] housekepping
+- [x] keybindings
+- [x] keyboard
 - [ ] media-keys
-- [ ] mouse
-- [ ] mpris
+- [x] mouse
+- [x] mpris
 - [ ] sound
 - [ ] smartcard
-- [ ] typing-break
+- [x] typing-break
 - [ ] xrandr
-- [ ] xrdb
-- [ ] xsettings
+- [x] xrdb
+- [x] xsettings
 
 ### 有问题的插件
 
 | 插件 | 问题 | 负责人 |
 | --- | --- | --- |
-| xsettings | 编译报错| |
-| sound | 运行报错:空链表... | |
-| datetime | 应该是个服务，目前请看不确定是否可用，未报错，这个可能需要特殊处理 | |
-| xrdb | 运行报错:未定义的接口，且那里边的父类看起来没用啊 ...| |
-| clipboard | 运行报错:此插件已运行...| 丁敬 |
-| media-key | 未完成...| 丁敬 |
-| xrandr | 运行报错:未定义的 `mate_rr_config_equal` | 商晓阳 |
+| a11y-keyboard | 未完成 | 商晓阳 |
+| housekeeping | 未完成 | 丁敬 |
+| datetime | 需要测试是否可用，运行未报错 | 闫焕章 |
+| media-key | 未完成| 丁敬 |
 | smartcard | 如果检测到硬件，内部段错误 | 商晓阳 |
+| sound | 运行有报错:空链表 | 闫焕章 |
+| xrdb | 运行报错:有未定义的接口，父类代码需要调整| 刘彤 |
+
+
+
