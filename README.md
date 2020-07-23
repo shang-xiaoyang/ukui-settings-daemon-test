@@ -33,9 +33,9 @@ debuild -D
 - [ ] housekepping
 - [x] keybindings
 - [x] keyboard
-- [ ] media-keys
+- [x] media-keys
 - [x] mouse
-- [ ] mpris
+- [x] mpris
 - [x] sound
 - [x] xrandr
 - [x] xrdb
@@ -49,6 +49,5 @@ debuild -D
 | a11y-settings | 搁置 |  |
 | smartcard | 搁置 |  |
 | housekeeping | 调试出错 | 刘彤 |
-| media-key | 未完成 | 闫焕章 |
-| mpris | 未完成 | 岳帅 |
-| xrandr |功能不完善 | 商晓阳 |
+| media-key | 功能不完善 | 闫焕章 |
+| xrandr | 功能不完善 | 商晓阳 |
