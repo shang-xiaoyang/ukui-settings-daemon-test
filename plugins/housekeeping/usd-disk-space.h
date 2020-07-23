@@ -2,8 +2,8 @@
 #define DISKSPACE_H
 
 #include <QObject>
-#include <QApplication>
-#include <QGSettings/qgsettings.h>
+//#include <QApplication>
+#include <QGSettings>
 
 #include "config.h"
 
@@ -20,6 +20,8 @@
 
 #include "usd-ldsm-dialog.h"
 
+#include <qhash.h>
+class QGSettings;
 typedef struct
 {
     GUnixMountEntry *mount;
@@ -30,19 +32,16 @@ typedef struct
 class DIskSpace :  public QObject
 {
     Q_OBJECT
-private:
-    DIskSpace();
-    DIskSpace(DIskSpace&)=delete;
-
 public:
+    DIskSpace();
+
     ~DIskSpace();
-    static DIskSpace *DiskSpaceNew();
     void UsdLdsmSetup (bool check_now);
     void UsdLdsmClean ();
-    static void usdLdsmGetConfig ();
+    void usdLdsmGetConfig ();
     static bool ldsm_mount_is_user_ignore (const char *path);
     static void ldsm_mounts_changed (GObject  *monitor,gpointer  data);
-    static bool ldsm_check_all_mounts (gpointer data);
+    static bool        ldsm_check_all_mounts ();
     static bool ldsm_mount_should_ignore (GUnixMountEntry *mount);
     static bool ldsm_mount_has_space (LdsmMountInfo *mount);
     static void ldsm_maybe_warn_mounts (GList *mounts,
@@ -56,9 +55,12 @@ public Q_SLOTS:
     void usdLdsmUpdateConfig(QString);
 
 private:
+    void cleanNotifyHash();
     static DIskSpace *mDisk;
     static GHashTable        *ldsm_notified_hash ;
-    static unsigned int       ldsm_timeout_id;
+    static QHash<const char*, LdsmMountInfo*> m_notified_hash;
+    static QTimer*       ldsm_timeout_cb;
+
     static GUnixMountMonitor *ldsm_monitor;
     static double             free_percent_notify;
     static double             free_percent_notify_again;
@@ -67,7 +69,7 @@ private:
     static GSList            *ignore_paths;
     static QGSettings        *settings;
     static LdsmDialog        *dialog;
-
+    QVariantList             ignoreList;
 };
 
 #endif // DISKSPACE_H

@@ -13,9 +13,10 @@ SUBDIRS += \
     $$PWD/plugins/mouse/mouse.pro               \
     $$PWD/plugins/mpris/mpris.pro               \
     $$PWD/plugins/sound/sound.pro              \
-\#    $$PWD/plugins/xrandr/xrandr.pro            \
+    $$PWD/plugins/xrandr/xrandr.pro            \
     $$PWD/plugins/xrdb/xrdb.pro                \
     $$PWD/plugins/xsettings/xsettings.pro      \
+    $$PWD/plugins/locate-pointer/usd-locate-pointer.pro \
     $$PWD/daemon/daemon.pro  \
 
 include($$PWD/data/data.pri)
