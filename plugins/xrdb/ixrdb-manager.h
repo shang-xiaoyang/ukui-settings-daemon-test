@@ -24,7 +24,7 @@
 class IXrdbManager {
 public:
     IXrdbManager(){};
-    virtual ~IXrdbManager() = 0;
+    virtual ~IXrdbManager(){};
     virtual bool start(GError**) = 0;
     virtual void stop() = 0;
 };

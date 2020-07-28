@@ -21,6 +21,8 @@
 #include <QPalette>
 #include <QSize>
 #include <QRect>
+#include <QScreen>
+#include <QX11Info>
 #include <QDebug>
 
 const QString ICONDIR = "/usr/share/icons/ukui-icon-theme-default/scalable";
@@ -53,11 +55,20 @@ VolumeWindow::~VolumeWindow()
 
 void VolumeWindow::initWindowInfo()
 {
+    int num,screenWidth,screenHeight;
+    QScreen* currentScreen;
+
+    num = QX11Info::appScreen();                       //curent screen number 当前屏幕编号
+    currentScreen = QApplication::screens().at(num);   //current screen       当前屏幕
+    screenWidth = currentScreen->size().width();
+    screenHeight = currentScreen->size().height();
+
     //窗口性质
     setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint);
     setWindowOpacity(0.95);          //设置透明度
     setPalette(QPalette(Qt::black));//设置窗口背景色
     setAutoFillBackground(true);
+    move(screenWidth*0.01,screenHeight*0.04);
 
     //new memery
     mVLayout = new QVBoxLayout(this);
