@@ -1,3 +1,21 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
+ * -*- coding: utf-8 -*-
+ *
+ * Copyright (C) 2020 KylinSoft Co., Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "xsettings-const.h"
 #include "ukui-xft-settings.h"
 #include "ukui-xsettings-manager.h"
@@ -94,22 +112,89 @@ static double get_dpi_from_gsettings_or_x_server (GSettings *gsettings)
     return dpi;
 }
 
+/* Auto-detect the most appropriate scale factor for the primary monitor.
+ * A lot of this code is copied and adapted from Linux Mint/Cinnamon.
+ * 如果设置缩放为0，通过获取物理显示器的分辨率大小进行设置合适的DPI缩放
+ */
+static int
+get_window_scale_auto ()
+{
+        GdkDisplay   *display;
+        GdkMonitor   *monitor;
+        GdkRectangle  rect;
+        int width_mm, height_mm;
+        int monitor_scale, window_scale;
+
+        display = gdk_display_get_default ();
+        monitor = gdk_display_get_primary_monitor (display);
+
+        /* Use current value as the default */
+        window_scale = 1;
+
+        gdk_monitor_get_geometry (monitor, &rect);
+        width_mm = gdk_monitor_get_width_mm (monitor);
+        height_mm = gdk_monitor_get_height_mm (monitor);
+        monitor_scale = gdk_monitor_get_scale_factor (monitor);
+
+        if (rect.height * monitor_scale < HIDPI_MIN_HEIGHT)
+                return 1;
+
+        /* Some monitors/TV encode the aspect ratio (16/9 or 16/10) instead of the physical size */
+        if ((width_mm == 160 && height_mm == 90) ||
+            (width_mm == 160 && height_mm == 100) ||
+            (width_mm == 16 && height_mm == 9) ||
+            (width_mm == 16 && height_mm == 10))
+                return 1;
+
+        if (width_mm > 0 && height_mm > 0) {
+                double dpi_x, dpi_y;
+
+                dpi_x = (double)rect.width * monitor_scale / (width_mm / 25.4);
+                dpi_y = (double)rect.height * monitor_scale / (height_mm / 25.4);
+                /* We don't completely trust these values so both must be high, and never pick
+                 * higher ratio than 2 automatically */
+                if (dpi_x > HIDPI_LIMIT && dpi_y > HIDPI_LIMIT)
+                        window_scale = 2;
+        }
+
+        return window_scale;
+}
+
+/* Get the key value to set the zoom
+ * 获取要设置缩放的键值
+ */
+static int
+get_window_scale (ukuiXSettingsManager *manager)
+{
+    GSettings   *gsettings;
+    int         scale;
+    gsettings = (GSettings *)g_hash_table_lookup(manager->gsettings,XSETTINGS_PLUGIN_SCHEMA);
+    scale = g_settings_get_int (gsettings, SCALING_FACTOR_KEY);
+    /* Auto-detect */
+    if (scale == 0)
+        scale = get_window_scale_auto ();
+    return scale;
+}
+
 void UkuiXftSettings::xft_settings_set_xsettings (ukuiXSettingsManager *manager)
 {
     int i;
-    //ukui_settings_profile_start (NULL);
+
     for (i = 0; manager->pManagers [i]; i++) {
         manager->pManagers [i]->set_int ("Xft/Antialias", antialias);
         manager->pManagers [i]->set_int ("Xft/Hinting", hinting);
         manager->pManagers [i]->set_string ("Xft/HintStyle", hintstyle);
-        manager->pManagers [i]->set_int ("Xft/DPI", dpi);
+
+        manager->pManagers [i]->set_int ( "Gdk/WindowScalingFactor",window_scale);
+        manager->pManagers [i]->set_int ("Gdk/UnscaledDPI",dpi);
+        manager->pManagers [i]->set_int ("Xft/DPI", scaled_dpi);
+
         manager->pManagers [i]->set_string ("Xft/RGBA", rgba);
         manager->pManagers [i]->set_string ("Xft/lcdfilter",
-                g_str_equal (rgba, "rgb") ? "lcddefault" : "none");
+                 g_str_equal (rgba, "rgb") ? "lcddefault" : "none");
         manager->pManagers [i]->set_int ("Gtk/CursorThemeSize", cursor_size);
         manager->pManagers [i]->set_string ("Gtk/CursorThemeName", cursor_theme);
     }
-    //ukui_settings_profile_end (NULL);
 }
 
 void UkuiXftSettings::xft_settings_get (ukuiXSettingsManager *manager)
@@ -119,6 +204,7 @@ void UkuiXftSettings::xft_settings_get (ukuiXSettingsManager *manager)
     char      *hinting;
     char      *rgba_order;
     double     dpi;
+    int        scale;
 
     mouse_gsettings = (GSettings *)g_hash_table_lookup (manager->gsettings, (void*)MOUSE_SCHEMA);
 
@@ -126,13 +212,18 @@ void UkuiXftSettings::xft_settings_get (ukuiXSettingsManager *manager)
     hinting = g_settings_get_string (manager->gsettings_font, FONT_HINTING_KEY);
     rgba_order = g_settings_get_string (manager->gsettings_font, FONT_RGBA_ORDER_KEY);
     dpi = get_dpi_from_gsettings_or_x_server (manager->gsettings_font);
+    scale = get_window_scale (manager);
 
     antialias = TRUE;
     this->hinting = TRUE;
     hintstyle = "hintslight";
-    dpi = dpi * 1024; /* Xft wants 1/1024ths of an inch */
+
+    this->window_scale = scale;
+    this->dpi = dpi * 1024; /* Xft wants 1/1024ths of an inch */
+    this->scaled_dpi = dpi * scale * 1024;
+
     cursor_theme = g_settings_get_string (mouse_gsettings, CURSOR_THEME_KEY);
-    cursor_size = g_settings_get_int (mouse_gsettings, CURSOR_SIZE_KEY);
+    cursor_size = g_settings_get_int (mouse_gsettings, CURSOR_SIZE_KEY) * scale;
     rgba = "rgb";
 
     if (rgba_order) {
@@ -208,7 +299,7 @@ void UkuiXftSettings::xft_settings_set_xresources ()
     add_string = g_string_new (XResourceManagerString (dpy));
     g_debug("xft_settings_set_xresources: orig res '%s'", add_string->str);
     update_property (add_string, "Xft.dpi",
-            g_ascii_dtostr (dpibuf, sizeof (dpibuf), (double) this->dpi / 1024.0));
+            g_ascii_dtostr (dpibuf, sizeof (dpibuf), (double) this->scaled_dpi / 1024.0));
     update_property (add_string, "Xft.antialias",
             this->antialias ? "1" : "0");
     update_property (add_string, "Xft.hinting",

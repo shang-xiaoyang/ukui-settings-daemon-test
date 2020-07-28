@@ -50,24 +50,3 @@ Description: daemon handling the UKUI session settings
  It also sets various application settings through X resources and
  freedesktop.org XSETTINGS.
 
-Package: ukui-settings-daemon-common
-Architecture: all
-Depends: ${misc:Depends},
-Description: daemon handling the UKUI session settings (common files)
- This package contains the daemon which is responsible for setting the
- various parameters of a UKUI session and the applications that run
- under it. It handles the following kinds of settings:
- .
-  * Keyboard: layout, accessibility options, shortcuts, media keys
-  * Clipboard management
-  * Theming: background, icons, GTK+ applications
-  * Cleanup of unused files
-  * Mouse: cursors, speed, accessibility options
-  * Startup of other daemons: screensaver, sound daemon
-  * Typing break
- .
- It also sets various application settings through X resources and
- freedesktop.org XSETTINGS.
- .
- This package contains the architecture independent files.
-

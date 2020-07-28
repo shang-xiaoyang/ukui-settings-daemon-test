@@ -1,3 +1,21 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
+ * -*- coding: utf-8 -*-
+ *
+ * Copyright (C) 2020 KylinSoft Co., Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <QString>
 #include <QDir>
 
@@ -56,7 +74,6 @@ void flush_cache (void)
     pa_context *c = NULL;
     pa_proplist *pl = NULL;
     pa_operation *o = NULL;
-    syslog(LOG_DEBUG,"Flushing sample cache");
 
     if (!(ml = pa_mainloop_new ())) {
         syslog(LOG_DEBUG,"Failed to allocate pa_mainloop");
@@ -120,7 +137,6 @@ void flush_cache (void)
         }
     }
 
-    syslog(LOG_DEBUG,"Sample cache flushed");
 
 fail:
     if (o) {
@@ -159,7 +175,6 @@ void SoundManager::trigger_flush ()
 void
 SoundManager::gsettings_notify_cb (const QString& key)
 {
-    syslog(LOG_DEBUG,"%s.%s changed",UKUI_SOUND_SCHEMA, key.toLatin1().data());
     trigger_flush();
 }
 /*func : listen for follow directory.
@@ -171,7 +186,6 @@ SoundManager::gsettings_notify_cb (const QString& key)
 void
 SoundManager::file_monitor_changed_cb (const QString& path)
 {
-    syslog(LOG_DEBUG,"%s changed",path.toLatin1().data());
     trigger_flush ();
 }
 
@@ -183,7 +197,6 @@ SoundManager::register_directory_callback (const QString path,
     QFileSystemWatcher* w;
     bool succ = false;
 
-    syslog(LOG_DEBUG,"Registering directory monitor for %s", path.toLatin1().data());
 
     w = new QFileSystemWatcher();
     if(w->addPath(path)){

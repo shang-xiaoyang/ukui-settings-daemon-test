@@ -1,94 +1,22 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
+ * -*- coding: utf-8 -*-
+ *
+ * Copyright (C) 2020 KylinSoft Co., Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "clipboard-manager.h"
-
-/* always defined to indicate that i18n is enabled */
-#define ENABLE_NLS 1
-
-/* enable profiling */
-/* #undef ENABLE_PROFILING */
-
-/* Name of default gettext domain */
-#define GETTEXT_PACKAGE "ukui-settings-daemon"
-
-/* Warn on use of APIs added after GLib 2.36 */
-#define GLIB_VERSION_MAX_ALLOWED GLIB_VERSION_2_36
-
-/* Warn on use of APIs deprecated before GLib 2.36 */
-#define GLIB_VERSION_MIN_REQUIRED GLIB_VERSION_2_36
-
-/* Define to 1 if you have the `bind_textdomain_codeset' function. */
-#define HAVE_BIND_TEXTDOMAIN_CODESET 1
-
-/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
-   CoreFoundation framework. */
-/* #undef HAVE_CFLOCALECOPYCURRENT */
-
-/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
-   the CoreFoundation framework. */
-/* #undef HAVE_CFPREFERENCESCOPYAPPVALUE */
-
-/* Define to 1 if you have the `dcgettext' function. */
-#define HAVE_DCGETTEXT 1
-
-/* Define to 1 if you have the <dlfcn.h> header file. */
-#define HAVE_DLFCN_H 1
-
-/* Define if the GNU gettext() function is already present or preinstalled. */
-#define HAVE_GETTEXT 1
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
-
-/* Define if your <locale.h> file defines LC_MESSAGES. */
-#define HAVE_LC_MESSAGES 1
-
-/* Define if libcanberra-gtk3 is available */
-#define HAVE_LIBCANBERRA 1
-
-/* Define if libmatemixer is available */
-#define HAVE_LIBMATEMIXER 1
-
-/* Define if libnotify is available */
-#define HAVE_LIBNOTIFY 1
-
-/* Define to 1 if you have the <locale.h> header file. */
-#define HAVE_LOCALE_H 1
-
-/* Define to 1 if you have the <memory.h> header file. */
-#define HAVE_MEMORY_H 1
-
-/* Defined if PolicyKit support is enabled */
-#define HAVE_POLKIT 1
-
-/* Define if PulseAudio support is available */
-/* #undef HAVE_PULSE */
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#define HAVE_STDINT_H 1
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#define HAVE_STDLIB_H 1
-
-/* Define to 1 if you have the <strings.h> header file. */
-#define HAVE_STRINGS_H 1
-
-/* Define to 1 if you have the <string.h> header file. */
-#define HAVE_STRING_H 1
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#define HAVE_SYS_STAT_H 1
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#define HAVE_SYS_TYPES_H 1
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H 1
-
-/* Define to 1 if you have the <X11/extensions/xf86misc.h> header file. */
-/* #undef HAVE_X11_EXTENSIONS_XF86MISC_H */
-
-/* Define to 1 if you have the <X11/extensions/XKB.h> header file. */
-#define HAVE_X11_EXTENSIONS_XKB_H 1
-
 #include <glib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -105,27 +33,6 @@
 #include "list.h"
 #include "xutils.h"
 #include "clib-syslog.h"
-
-void target_data_unref (TargetData *data);
-int clipboard_bytes_per_item (int format);
-void conversion_free (IncrConversion* rdata);
-TargetData* target_data_ref (TargetData *data);
-int find_content_type (TargetData* tdata, Atom type);
-int find_content_target (TargetData* tdata, Atom target);
-void convert_clipboard (ClipboardManager* manager, XEvent* xev);
-void get_property (TargetData* tdata, ClipboardManager* manager);
-bool send_incrementally (ClipboardManager* manager, XEvent* xev);
-int find_conversion_requestor (IncrConversion* rdata, XEvent* xev);
-bool receive_incrementally (ClipboardManager* manager, XEvent* xev);
-void send_selection_notify (ClipboardManager* manager, bool success);
-void convert_clipboard_manager (ClipboardManager* manager, XEvent* xev);
-void collect_incremental (IncrConversion* rdata, ClipboardManager* manager);
-bool clipboard_manager_process_event(ClipboardManager* manager, XEvent* xev);
-void save_targets (ClipboardManager* manager, Atom* save_targets, int nitems);
-void convert_clipboard_target (IncrConversion* rdata, ClipboardManager* manager);
-void finish_selection_request (ClipboardManager* manager, XEvent* xev, bool success);
-GdkFilterReturn clipboard_manager_event_filter (GdkXEvent* xevent, GdkEvent* event, ClipboardManager* manager);
-void clipboard_manager_watch_cb(ClipboardManager* manager, Window window, bool isStart, long mask, void* cbData);
 
 ClipboardManager::ClipboardManager(QObject *parent) : QThread(parent)
 {
@@ -145,6 +52,24 @@ ClipboardManager::ClipboardManager(QObject *parent) : QThread(parent)
 
 ClipboardManager::~ClipboardManager()
 {
+}
+
+void target_data_unref (TargetData *data)
+{
+    data->refcount--;
+    if (data->refcount == 0) {
+        free (data->data);
+        free (data);
+    }
+}
+
+
+void conversion_free (IncrConversion* rdata)
+{
+    if (rdata->data) {
+        target_data_unref (rdata->data);
+    }
+    free (rdata);
 }
 
 bool ClipboardManager::managerStart()
@@ -222,6 +147,15 @@ void ClipboardManager::run()
     }
 }
 
+GdkFilterReturn clipboard_manager_event_filter (GdkXEvent* xevent, GdkEvent*, ClipboardManager* manager)
+{
+    if (clipboard_manager_process_event (manager, (XEvent *)xevent)) {
+        return GDK_FILTER_REMOVE;
+    } else {
+        return GDK_FILTER_CONTINUE;
+    }
+}
+
 void clipboard_manager_watch_cb(ClipboardManager* manager, Window window, bool isStart, long, void*)
 {
     GdkWindow*                  gdkwin;
@@ -248,30 +182,198 @@ void clipboard_manager_watch_cb(ClipboardManager* manager, Window window, bool i
     }
 }
 
-void conversion_free (IncrConversion* rdata)
+int clipboard_bytes_per_item (int format)
 {
-    if (rdata->data) {
-        target_data_unref (rdata->data);
+    switch (format) {
+    case 8: return sizeof (char);
+    case 16: return sizeof (short);
+    case 32: return sizeof (long);
+    default: ;
     }
-    free (rdata);
+
+    return 0;
 }
 
-void target_data_unref (TargetData *data)
+void get_property (TargetData* tdata, ClipboardManager* manager)
 {
-    data->refcount--;
-    if (data->refcount == 0) {
-        free (data->data);
-        free (data);
-    }
-}
+    Atom                                type;
+    int                                 format;
+    unsigned long                       length;
+    unsigned long                       remaining;
+    unsigned char*                      data;
 
-GdkFilterReturn clipboard_manager_event_filter (GdkXEvent* xevent, GdkEvent*, ClipboardManager* manager)
-{
-    if (clipboard_manager_process_event (manager, (XEvent *)xevent)) {
-        return GDK_FILTER_REMOVE;
+    XGetWindowProperty (manager->mDisplay, manager->mWindow, tdata->target, 0, 0x1FFFFFFF, true, AnyPropertyType, &type, &format, &length, &remaining, &data);
+
+    if (type == None) {
+        manager->mContents = list_remove (manager->mContents, tdata);
+        free (tdata);
+    } else if (type == XA_INCR) {
+        tdata->type = type;
+        tdata->length = 0;
+        XFree (data);
     } else {
-        return GDK_FILTER_CONTINUE;
+        tdata->type = type;
+        tdata->data = data;
+        tdata->length = length * clipboard_bytes_per_item (format);
+        tdata->format = format;
     }
+}
+
+int find_content_type (TargetData* tdata, Atom type)
+{
+    return tdata->type == type;
+}
+
+
+int find_content_target (TargetData* tdata, Atom target)
+{
+    return tdata->target == target;
+}
+
+TargetData* target_data_ref (TargetData *data)
+{
+    data->refcount++;
+    return data;
+}
+
+void convert_clipboard_target (IncrConversion* rdata, ClipboardManager* manager)
+{
+    TargetData       *tdata;
+    Atom             *targets;
+    int               n_targets;
+    List             *list;
+    unsigned long     items;
+    XWindowAttributes atts;
+
+    if (rdata->target == XA_TARGETS) {
+        n_targets = list_length (manager->mContents) + 2;
+        targets = (Atom *) malloc (n_targets * sizeof (Atom));
+
+        n_targets = 0;
+
+        targets[n_targets++] = XA_TARGETS;
+        targets[n_targets++] = XA_MULTIPLE;
+
+        for (list = manager->mContents; list; list = list->next) {
+                tdata = (TargetData *) list->data;
+                targets[n_targets++] = tdata->target;
+        }
+
+        XChangeProperty (manager->mDisplay, rdata->requestor, rdata->property, XA_ATOM, 32, PropModeReplace, (unsigned char *) targets, n_targets);
+        free (targets);
+    } else  {
+        /* Convert from stored CLIPBOARD data */
+        list = list_find (manager->mContents, (ListFindFunc) find_content_target, (void *) rdata->target);
+
+        /* We got a target that we don't support */
+        if (!list) return;
+
+        tdata = (TargetData *)list->data;
+        if (tdata->type == XA_INCR) {
+            /* we haven't completely received this target yet  */
+            rdata->property = None;
+            return;
+        }
+
+        rdata->data = target_data_ref (tdata);
+        items = tdata->length / clipboard_bytes_per_item (tdata->format);
+        if (tdata->length <= SELECTION_MAX_SIZE)
+            XChangeProperty (manager->mDisplay, rdata->requestor, rdata->property, tdata->type, tdata->format, PropModeReplace, tdata->data, items);
+        else {
+            /* start incremental transfer */
+            rdata->offset = 0;
+
+            gdk_x11_display_error_trap_push(gdk_display_get_default());
+            XGetWindowAttributes (manager->mDisplay, rdata->requestor, &atts);
+            XSelectInput (manager->mDisplay, rdata->requestor, atts.your_event_mask | PropertyChangeMask);
+
+            XChangeProperty (manager->mDisplay, rdata->requestor, rdata->property,
+                             XA_INCR, 32, PropModeReplace, (unsigned char *) &items, 1);
+            XSync (manager->mDisplay, False);
+            gdk_x11_display_error_trap_pop_ignored(gdk_display_get_default());
+        }
+    }
+}
+
+void collect_incremental (IncrConversion* rdata, ClipboardManager* manager)
+{
+    if (rdata->offset >= 0)
+        manager->mConversions = list_prepend (manager->mConversions, rdata);
+    else {
+        if (rdata->data) {
+            target_data_unref (rdata->data);
+            rdata->data = NULL;
+        }
+        free (rdata);
+    }
+}
+
+
+void convert_clipboard (ClipboardManager* manager, XEvent* xev)
+{
+    int                                 format;
+    unsigned long                       nitems;
+    unsigned long                       remaining;
+    List*                               list;
+    List*                               conversions;
+    Atom                                type;
+    Atom*                               multiple;
+    IncrConversion*                     rdata;
+
+    conversions = NULL;
+    type = None;
+
+    if (xev->xselectionrequest.target == XA_MULTIPLE) {
+        XGetWindowProperty (xev->xselectionrequest.display, xev->xselectionrequest.requestor, xev->xselectionrequest.property, 0, 0x1FFFFFFF, False, XA_ATOM_PAIR,
+                            &type, &format, &nitems, &remaining, (unsigned char **) &multiple);
+        if (type != XA_ATOM_PAIR || nitems == 0) {
+            if (multiple) free (multiple);
+            return;
+        }
+
+        for (unsigned long i = 0; i < nitems; i += 2) {
+            rdata = (IncrConversion *) malloc (sizeof (IncrConversion));
+            rdata->requestor = xev->xselectionrequest.requestor;
+            rdata->target = multiple[i];
+            rdata->property = multiple[i+1];
+            rdata->data = NULL;
+            rdata->offset = -1;
+            conversions = list_prepend (conversions, rdata);
+        }
+    } else {
+        multiple = NULL;
+
+        rdata = (IncrConversion *) malloc (sizeof (IncrConversion));
+        rdata->requestor = xev->xselectionrequest.requestor;
+        rdata->target = xev->xselectionrequest.target;
+        rdata->property = xev->xselectionrequest.property;
+        rdata->data = NULL;
+        rdata->offset = -1;
+        conversions = list_prepend (conversions, rdata);
+    }
+
+    list_foreach (conversions, (Callback) convert_clipboard_target, manager);
+
+    if (conversions->next == NULL && ((IncrConversion *) conversions->data)->property == None) {
+        finish_selection_request (manager, xev, False);
+    } else {
+        if (multiple) {
+            int i = 0;
+            for (list = conversions; list; list = list->next) {
+                    rdata = (IncrConversion *)list->data;
+                    multiple[i++] = rdata->target;
+                    multiple[i++] = rdata->property;
+            }
+            XChangeProperty (xev->xselectionrequest.display, xev->xselectionrequest.requestor,
+                             xev->xselectionrequest.property, XA_ATOM_PAIR, 32, PropModeReplace, (unsigned char *) multiple, nitems);
+        }
+        finish_selection_request (manager, xev, True);
+    }
+
+    list_foreach (conversions, (Callback) collect_incremental, manager);
+    list_free (conversions);
+
+    if (multiple) free (multiple);
 }
 
 bool clipboard_manager_process_event(ClipboardManager* manager, XEvent* xev)
@@ -379,6 +481,7 @@ bool clipboard_manager_process_event(ClipboardManager* manager, XEvent* xev)
     return false;
 }
 
+
 bool receive_incrementally (ClipboardManager* manager, XEvent* xev)
 {
     List*                       list;
@@ -418,6 +521,12 @@ bool receive_incrementally (ClipboardManager* manager, XEvent* xev)
     }
     return True;
 }
+
+int find_conversion_requestor (IncrConversion* rdata, XEvent* xev)
+{
+    return (rdata->requestor == xev->xproperty.window && rdata->property == xev->xproperty.atom);
+}
+
 
 bool send_incrementally (ClipboardManager* manager, XEvent* xev)
 {
@@ -482,35 +591,6 @@ void save_targets (ClipboardManager* manager, Atom* save_targets, int nitems)
     XConvertSelection (manager->mDisplay, XA_CLIPBOARD, XA_MULTIPLE, XA_MULTIPLE, manager->mWindow, manager->mTime);
 }
 
-void get_property (TargetData* tdata, ClipboardManager* manager)
-{
-    Atom                                type;
-    int                                 format;
-    unsigned long                       length;
-    unsigned long                       remaining;
-    unsigned char*                      data;
-
-    XGetWindowProperty (manager->mDisplay, manager->mWindow, tdata->target, 0, 0x1FFFFFFF, true, AnyPropertyType, &type, &format, &length, &remaining, &data);
-
-    if (type == None) {
-        manager->mContents = list_remove (manager->mContents, tdata);
-        free (tdata);
-    } else if (type == XA_INCR) {
-        tdata->type = type;
-        tdata->length = 0;
-        XFree (data);
-    } else {
-        tdata->type = type;
-        tdata->data = data;
-        tdata->length = length * clipboard_bytes_per_item (format);
-        tdata->format = format;
-    }
-}
-
-int find_content_type (TargetData* tdata, Atom type)
-{
-    return tdata->type == type;
-}
 
 void send_selection_notify (ClipboardManager* manager, bool success)
 {
@@ -526,10 +606,10 @@ void send_selection_notify (ClipboardManager* manager, bool success)
     notify.property = success ? manager->mProperty : None;
     notify.time = manager->mTime;
 
-    gdk_error_trap_push ();
+    gdk_x11_display_error_trap_push(gdk_display_get_default());
     XSendEvent (manager->mDisplay, manager->mRequestor, false, NoEventMask, (XEvent *)&notify);
     XSync (manager->mDisplay, false);
-    gdk_error_trap_pop_ignored ();
+    gdk_x11_display_error_trap_pop_ignored(gdk_display_get_default());
 }
 
 void convert_clipboard_manager (ClipboardManager* manager, XEvent* xev)
@@ -545,18 +625,19 @@ void convert_clipboard_manager (ClipboardManager* manager, XEvent* xev)
             /* We're in the middle of a conversion request, or own the CLIPBOARD already */
             finish_selection_request (manager, xev, False);
         } else {
-            gdk_error_trap_push ();
+
+            gdk_x11_display_error_trap_push(gdk_display_get_default());
             clipboard_manager_watch_cb (manager, xev->xselectionrequest.requestor, true, StructureNotifyMask, nullptr);
             XSelectInput (manager->mDisplay, xev->xselectionrequest.requestor, StructureNotifyMask);
             XSync (manager->mDisplay, false);
 
-            if (gdk_error_trap_pop () != Success) return;
-            gdk_error_trap_push ();
+            if (gdk_x11_display_error_trap_pop (gdk_display_get_default()) != Success) return;
 
+            gdk_x11_display_error_trap_push(gdk_display_get_default());
             if (xev->xselectionrequest.property != None) {
                 XGetWindowProperty (manager->mDisplay, xev->xselectionrequest.requestor, xev->xselectionrequest.property,
                                     0, 0x1FFFFFFF, False, XA_ATOM, &type, &format, &nitems, &remaining, (unsigned char **) &targets);
-                if (gdk_error_trap_pop () != Success) {
+                if (gdk_x11_display_error_trap_pop (gdk_display_get_default()) != Success) {
                     if (targets) XFree (targets);
                     return;
                 }
@@ -591,72 +672,7 @@ void convert_clipboard_manager (ClipboardManager* manager, XEvent* xev)
     }
 }
 
-void convert_clipboard (ClipboardManager* manager, XEvent* xev)
-{
-    int                                 format;
-    unsigned long                       nitems;
-    unsigned long                       remaining;
-    List*                               list;
-    List*                               conversions;
-    Atom                                type;
-    Atom*                               multiple;
-    IncrConversion*                     rdata;
 
-    conversions = NULL;
-    type = None;
-
-    if (xev->xselectionrequest.target == XA_MULTIPLE) {
-        XGetWindowProperty (xev->xselectionrequest.display, xev->xselectionrequest.requestor, xev->xselectionrequest.property, 0, 0x1FFFFFFF, False, XA_ATOM_PAIR,
-                            &type, &format, &nitems, &remaining, (unsigned char **) &multiple);
-        if (type != XA_ATOM_PAIR || nitems == 0) {
-            if (multiple) free (multiple);
-            return;
-        }
-
-        for (unsigned long i = 0; i < nitems; i += 2) {
-            rdata = (IncrConversion *) malloc (sizeof (IncrConversion));
-            rdata->requestor = xev->xselectionrequest.requestor;
-            rdata->target = multiple[i];
-            rdata->property = multiple[i+1];
-            rdata->data = NULL;
-            rdata->offset = -1;
-            conversions = list_prepend (conversions, rdata);
-        }
-    } else {
-        multiple = NULL;
-
-        rdata = (IncrConversion *) malloc (sizeof (IncrConversion));
-        rdata->requestor = xev->xselectionrequest.requestor;
-        rdata->target = xev->xselectionrequest.target;
-        rdata->property = xev->xselectionrequest.property;
-        rdata->data = NULL;
-        rdata->offset = -1;
-        conversions = list_prepend (conversions, rdata);
-    }
-
-    list_foreach (conversions, (Callback) convert_clipboard_target, manager);
-
-    if (conversions->next == NULL && ((IncrConversion *) conversions->data)->property == None) {
-        finish_selection_request (manager, xev, False);
-    } else {
-        if (multiple) {
-            int i = 0;
-            for (list = conversions; list; list = list->next) {
-                    rdata = (IncrConversion *)list->data;
-                    multiple[i++] = rdata->target;
-                    multiple[i++] = rdata->property;
-            }
-            XChangeProperty (xev->xselectionrequest.display, xev->xselectionrequest.requestor,
-                             xev->xselectionrequest.property, XA_ATOM_PAIR, 32, PropModeReplace, (unsigned char *) multiple, nitems);
-        }
-        finish_selection_request (manager, xev, True);
-    }
-
-    list_foreach (conversions, (Callback) collect_incremental, manager);
-    list_free (conversions);
-
-    if (multiple) free (multiple);
-}
 
 void finish_selection_request (ClipboardManager* manager, XEvent* xev, bool success)
 {
@@ -672,109 +688,8 @@ void finish_selection_request (ClipboardManager* manager, XEvent* xev, bool succ
     notify.property = success ? xev->xselectionrequest.property : None;
     notify.time = xev->xselectionrequest.time;
 
-    gdk_error_trap_push ();
+    gdk_x11_display_error_trap_push (gdk_display_get_default());
     XSendEvent (xev->xselectionrequest.display, xev->xselectionrequest.requestor, false, NoEventMask, (XEvent *) &notify);
     XSync (manager->mDisplay, false);
-    gdk_error_trap_pop_ignored ();
-}
-
-int find_content_target (TargetData* tdata, Atom target)
-{
-    return tdata->target == target;
-}
-
-int clipboard_bytes_per_item (int format)
-{
-    switch (format) {
-    case 8: return sizeof (char);
-    case 16: return sizeof (short);
-    case 32: return sizeof (long);
-    default: ;
-    }
-
-    return 0;
-}
-
-int find_conversion_requestor (IncrConversion* rdata, XEvent* xev)
-{
-    return (rdata->requestor == xev->xproperty.window && rdata->property == xev->xproperty.atom);
-}
-
-void convert_clipboard_target (IncrConversion* rdata, ClipboardManager* manager)
-{
-    TargetData       *tdata;
-    Atom             *targets;
-    int               n_targets;
-    List             *list;
-    unsigned long     items;
-    XWindowAttributes atts;
-
-    if (rdata->target == XA_TARGETS) {
-        n_targets = list_length (manager->mContents) + 2;
-        targets = (Atom *) malloc (n_targets * sizeof (Atom));
-
-        n_targets = 0;
-
-        targets[n_targets++] = XA_TARGETS;
-        targets[n_targets++] = XA_MULTIPLE;
-
-        for (list = manager->mContents; list; list = list->next) {
-                tdata = (TargetData *) list->data;
-                targets[n_targets++] = tdata->target;
-        }
-
-        XChangeProperty (manager->mDisplay, rdata->requestor, rdata->property, XA_ATOM, 32, PropModeReplace, (unsigned char *) targets, n_targets);
-        free (targets);
-    } else  {
-        /* Convert from stored CLIPBOARD data */
-        list = list_find (manager->mContents, (ListFindFunc) find_content_target, (void *) rdata->target);
-
-        /* We got a target that we don't support */
-        if (!list) return;
-
-        tdata = (TargetData *)list->data;
-        if (tdata->type == XA_INCR) {
-            /* we haven't completely received this target yet  */
-            rdata->property = None;
-            return;
-        }
-
-        rdata->data = target_data_ref (tdata);
-        items = tdata->length / clipboard_bytes_per_item (tdata->format);
-        if (tdata->length <= SELECTION_MAX_SIZE)
-            XChangeProperty (manager->mDisplay, rdata->requestor, rdata->property, tdata->type, tdata->format, PropModeReplace, tdata->data, items);
-        else {
-            /* start incremental transfer */
-            rdata->offset = 0;
-
-            gdk_error_trap_push ();
-
-            XGetWindowAttributes (manager->mDisplay, rdata->requestor, &atts);
-            XSelectInput (manager->mDisplay, rdata->requestor, atts.your_event_mask | PropertyChangeMask);
-
-            XChangeProperty (manager->mDisplay, rdata->requestor, rdata->property,
-                             XA_INCR, 32, PropModeReplace, (unsigned char *) &items, 1);
-            XSync (manager->mDisplay, False);
-            gdk_error_trap_pop_ignored ();
-        }
-    }
-}
-
-void collect_incremental (IncrConversion* rdata, ClipboardManager* manager)
-{
-    if (rdata->offset >= 0)
-        manager->mConversions = list_prepend (manager->mConversions, rdata);
-    else {
-        if (rdata->data) {
-            target_data_unref (rdata->data);
-            rdata->data = NULL;
-        }
-        free (rdata);
-    }
-}
-
-TargetData* target_data_ref (TargetData *data)
-{
-    data->refcount++;
-    return data;
+    gdk_x11_display_error_trap_pop_ignored(gdk_display_get_default());
 }

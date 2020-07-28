@@ -1,3 +1,21 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
+ * -*- coding: utf-8 -*-
+ *
+ * Copyright (C) 2020 KylinSoft Co., Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <QStringList>
 #include <QDBusReply>
 #include <QDBusMessage>
@@ -62,7 +80,7 @@ bool MprisManager::MprisManagerStart (GError           **error)
     mDbusInterface = new QDBusInterface(DBUS_NAME,MEDIAKEYS_DBUS_PATH,MEDIAKEYS_DBUS_NAME,
                                         conn);
 
-    syslog (LOG_DEBUG,"Starting mpris manager");
+   syslog (LOG_DEBUG,"Starting mpris manager");
 
     /* Register all the names we wish to watch.*/
     mDbusWatcher->setWatchedServices(busNames);
@@ -211,7 +229,6 @@ void MprisManager::keyPressed(QString application,QString operation)
 
     mprisHead = mPlayerQuque->head();
     mprisName = MPRIS_PREFIX + mprisHead;
-    syslog(LOG_ERR,"MPRIS Sending %s to %s",mprisKey.toLatin1().data(),mprisName.toLatin1().data());
 
     /* create a dbus method call by QDBusMessage, the @mprisName is a member of @busNames
      * 通过QDBusMessage的方式创建一个dbus方法调用，@mprisName 来自于 @busNames

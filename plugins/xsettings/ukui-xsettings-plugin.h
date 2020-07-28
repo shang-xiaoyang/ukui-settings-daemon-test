@@ -16,20 +16,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef XSETTINGS_H
+#define XSETTINGS_H
+#include "plugin-interface.h"
+#include "ukui-xsettings-manager.h"
+#include <QtCore/qglobal.h>
 
-#ifndef QCONFTYPE_H
-#define QCONFTYPE_H
+class XSettingsPlugin: public PluginInterface
+{
+private:
+    XSettingsPlugin();
+    XSettingsPlugin(XSettingsPlugin&) = delete;
 
-#include <glib.h>
-#include <QVariant>
+public: 
+    ~XSettingsPlugin();
+    static PluginInterface *getInstance();
+    virtual void activate();
+    virtual void deactivate();
 
-QVariant::Type qconf_types_convert (const GVariantType* gtype);
-GVariant* qconf_types_collect (const GVariantType* gtype, const void* argument);
-GVariant* qconf_types_collect_from_variant(const GVariantType* gtype, const QVariant& v);
-QVariant qconf_types_to_qvariant (GVariant* value);
-void qconf_types_unpack (GVariant* value, void* argument);
+private:
+    static ukuiXSettingsManager *m_pukuiXsettingManager;
+    static PluginInterface      *mInstance;
+};
 
-QString qtify_name(const char *name);
-gchar * unqtify_name(const QString &name);
+extern "C" Q_DECL_EXPORT PluginInterface* createSettingsPlugin();
 
-#endif // QCONFTYPE_H
+#endif // XSETTINGS_H
