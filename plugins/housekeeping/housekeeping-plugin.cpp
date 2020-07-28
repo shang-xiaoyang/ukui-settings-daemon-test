@@ -33,7 +33,6 @@ PluginInterface *HousekeepingPlugin::getInstance()
 
 void HousekeepingPlugin::deactivate()
 {
-    syslog(LOG_ERR,"Deactivating Housekeeping Plugin");
     mHouseManager->HousekeepingManagerStop();
 }
 

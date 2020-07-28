@@ -1,6 +1,27 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
+ * -*- coding: utf-8 -*-
+ *
+ * Copyright (C) 2020 KylinSoft Co., Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "usd-disk-space.h"
 #include <QDebug>
 #include "qtimer.h"
+#include <syslog.h>
+
 #define GIGABYTE                   1024 * 1024 * 1024
 
 #define CHECK_EVERY_X_SECONDS      60
@@ -19,19 +40,19 @@ static unsigned long       *time_read;
 QTimer* DIskSpace::ldsm_timeout_cb = NULL;
 
 
- DIskSpace *DIskSpace::mDisk = NULL;
- GHashTable        *DIskSpace::ldsm_notified_hash  = NULL;
- QHash<const char*, LdsmMountInfo*> DIskSpace::m_notified_hash;
+DIskSpace *DIskSpace::mDisk = NULL;
+GHashTable        *DIskSpace::ldsm_notified_hash  = NULL;
+QHash<const char*, LdsmMountInfo*> DIskSpace::m_notified_hash;
 
 
- GUnixMountMonitor *DIskSpace::ldsm_monitor = NULL;
- double             DIskSpace::free_percent_notify;
- double             DIskSpace::free_percent_notify_again;
- unsigned int       DIskSpace::free_size_gb_no_notify;
- unsigned int       DIskSpace::min_notify_period = 0;
- GSList            *DIskSpace::ignore_paths = NULL;
- QGSettings        *DIskSpace::settings;
- LdsmDialog        *DIskSpace::dialog = NULL;
+GUnixMountMonitor *DIskSpace::ldsm_monitor = NULL;
+double             DIskSpace::free_percent_notify;
+double             DIskSpace::free_percent_notify_again;
+unsigned int       DIskSpace::free_size_gb_no_notify;
+unsigned int       DIskSpace::min_notify_period = 0;
+GSList            *DIskSpace::ignore_paths = NULL;
+QGSettings        *DIskSpace::settings;
+LdsmDialog        *DIskSpace::dialog = NULL;
 
 DIskSpace::DIskSpace()
 {
@@ -133,14 +154,14 @@ void DIskSpace::usdLdsmGetConfig()
     if (settings_list != NULL) {
         //unsigned int i;
         // 清理m_notified_hash中ignoreList存在的。
-//        QVariant it;
-//        foreach ( it, ignoreList) {
-//            qDebug() << it;
-//            // m_notified_hash.remove(it.key())
-//        }
+        //        QVariant it;
+        //        foreach ( it, ignoreList) {
+        //            qDebug() << it;
+        //            // m_notified_hash.remove(it.key())
+        //        }
         for (auto i = ignoreList.constBegin(); i != ignoreList.constEnd(); ++i) {
-           qDebug() << "====\n";
-       }
+            qDebug() << "====\n";
+        }
     }
 }
 
@@ -432,7 +453,7 @@ bool DIskSpace::ldsm_notify_for_mount (LdsmMountInfo *mount,
         break;
     case LDSM_DIALOG_RESPONSE_EMPTY_TRASH:
         retval = TRUE;
-        //usd_ldsm_trash_empty ();//调清空回收站dialog
+        // usd_ldsm_trash_empty ();//调清空回收站dialog
         break;
 
     case GTK_RESPONSE_NONE:
@@ -531,7 +552,6 @@ bool DIskSpace::ldsm_check_all_mounts ()
     guint number_of_full_mounts;
     gboolean multiple_volumes = FALSE;
     gboolean other_usable_volumes = FALSE;
-
     /* We iterate through the static mounts in /etc/fstab first, seeing if
      * they're mounted by checking if the GUnixMountPoint has a corresponding GUnixMountEntry.
      * Iterating through the static mounts means we automatically ignore dynamically mounted media.
@@ -620,8 +640,6 @@ void DIskSpace::ldsm_mounts_changed (GObject  *monitor,gpointer  data)
 
     /* check the status now, for the new mounts */
     ldsm_check_all_mounts ();
-
-
 
     /* and reset the timeout */
     ldsm_timeout_cb->start(CHECK_EVERY_X_SECONDS);

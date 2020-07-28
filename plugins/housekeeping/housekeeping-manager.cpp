@@ -1,3 +1,22 @@
+/* -*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
+ * -*- coding: utf-8 -*-
+ *
+ * Copyright (C) 2020 KylinSoft Co., Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "config.h"
 
 #include "housekeeping-manager.h"
@@ -6,16 +25,16 @@
 #include "qtimer.h"
 
 /* General */
-#define INTERVAL_ONCE_A_DAY     24*60*60
+#define INTERVAL_ONCE_A_DAY     24*60*60*1000
 //#define INTERVAL_TWO_MINUTES    2*60
-#define INTERVAL_TWO_MINUTES    2
+#define INTERVAL_TWO_MINUTES    60*2000
 /* Thumbnail cleaner */
 #define THUMB_CACHE_SCHEMA      "org.mate.thumbnail-cache"
 #define THUMB_CACHE_KEY_AGE     "maximum-age"
 #define THUMB_CACHE_KEY_SIZE	"maximum-size"
 
 HousekeepingManager  *HousekeepingManager::mHouseManager = nullptr;
-DIskSpace   *HousekeepingManager::mDisk = nullptr;
+DIskSpace            *HousekeepingManager::mDisk         = nullptr;
 
 typedef struct {
     long now;
@@ -46,7 +65,7 @@ HousekeepingManager::HousekeepingManager()
 
 /*
  * 清理DIskSpace， QGSettings，两个QTimer
-*/
+ */
 HousekeepingManager::~HousekeepingManager()
 {
     delete mDisk;
@@ -55,10 +74,7 @@ HousekeepingManager::~HousekeepingManager()
     delete short_term_handler;
 }
 
-
-
-static GList *
-read_dir_for_purge (const char *path, GList *files)
+static GList * read_dir_for_purge (const char *path, GList *files)
 {
     GFile           *read_path;
     GFileEnumerator *enum_dir;
@@ -76,7 +92,6 @@ read_dir_for_purge (const char *path, GList *files)
         GFileInfo *info;
         while ((info = g_file_enumerator_next_file (enum_dir, NULL, NULL)) != NULL)
         {
-
             const char *name;
             name = g_file_info_get_name (info);
 
@@ -108,8 +123,7 @@ read_dir_for_purge (const char *path, GList *files)
     return files;
 }
 
-static void
-purge_old_thumbnails (ThumbData *info, PurgeData *purge_data)
+static void purge_old_thumbnails (ThumbData *info, PurgeData *purge_data)
 {
     if ((purge_data->now - info->mtime) > purge_data->max_age) {
         g_unlink (info->path);
@@ -119,14 +133,12 @@ purge_old_thumbnails (ThumbData *info, PurgeData *purge_data)
     }
 }
 
-static int
-sort_file_mtime (ThumbData *file1, ThumbData *file2)
+static int sort_file_mtime (ThumbData *file1, ThumbData *file2)
 {
     return file1->mtime - file2->mtime;
 }
 
-static void
-thumb_data_free (gpointer data)
+static void thumb_data_free (gpointer data)
 {
     ThumbData *info = (ThumbData *)data;
 
@@ -143,14 +155,14 @@ void HousekeepingManager::purge_thumbnail_cache ()
     PurgeData  purge_data;
     GTimeVal   current_time;
 
-
     purge_data.max_age  = settings->get(THUMB_CACHE_KEY_AGE).toInt() * 24 * 60 * 60;
     purge_data.max_size = settings->get(THUMB_CACHE_KEY_SIZE).toInt() * 1024 * 1024;
 
     /* if both are set to -1, we don't need to read anything */
+    /* 测试临时去掉
     if ((purge_data.max_age < 0) && (purge_data.max_size < 0))
         return;
-
+    */
     path = g_build_filename (g_get_user_cache_dir (),
                              "thumbnails",
                              "normal",
@@ -196,17 +208,16 @@ void HousekeepingManager::purge_thumbnail_cache ()
 }
 
 
-bool HousekeepingManager::do_cleanup ()
+void HousekeepingManager::do_cleanup ()
 {
     purge_thumbnail_cache ();
-    return true;
+
 }
 
-bool HousekeepingManager::do_cleanup_once ()
+void HousekeepingManager::do_cleanup_once ()
 {
     do_cleanup ();
     short_term_handler->stop();
-    return false;
 }
 
 
@@ -217,19 +228,19 @@ void HousekeepingManager::do_cleanup_soon()
 
 void HousekeepingManager::settings_changed_callback(QString key)
 {
-    do_cleanup_soon ();
+    do_cleanup_soon();
 }
 
 bool HousekeepingManager::HousekeepingManagerStart()
 {
-    syslog(LOG_ERR,"Housekeeping Manager Start ");
-
     mDisk->UsdLdsmSetup(false);
 
-    connect (settings, SIGNAL(changed(QString("changeds"))),this, SLOT(HousekeepingManager::settings_changed_callback(QString)));
-
+    connect (settings,
+             SIGNAL(changed(QString("changeds"))),
+             this,
+             SLOT(settings_changed_callback(QString)));
     /* Clean once, a few minutes after start-up */
-    do_cleanup_soon ();
+    do_cleanup_soon();
 
     long_term_handler->start(INTERVAL_ONCE_A_DAY);
 
@@ -238,7 +249,6 @@ bool HousekeepingManager::HousekeepingManagerStart()
 
 void HousekeepingManager::HousekeepingManagerStop()
 {
-    syslog(LOG_DEBUG, "Housekeeping Manager Stop");
     // 时间
     if (short_term_handler) {
         short_term_handler->stop();
