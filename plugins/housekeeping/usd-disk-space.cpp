@@ -20,6 +20,7 @@
 #include "usd-disk-space.h"
 #include <QDebug>
 #include "qtimer.h"
+#include "syslog.h"
 
 #define GIGABYTE                   1024 * 1024 * 1024
 
@@ -69,19 +70,6 @@ DIskSpace::DIskSpace()
     if (QGSettings::isSchemaInstalled(SETTINGS_HOUSEKEEPING_SCHEMA)) {
         settings = new QGSettings(SETTINGS_HOUSEKEEPING_SCHEMA);
 
-        //监听key的value是否发生了变化
-        connect(settings, &QGSettings::changed, this, [=] (const QString &key) {
-            if (key == "name") {
-
-            }
-            else if (key == "age") {
-                //int age = get_int_value("age");
-                //emit this->send_int(ValueType::AgeType, age);
-            }
-            else if (key == "male") {
-
-            }
-        });
     }
     dialog = NULL;
 }
@@ -153,13 +141,11 @@ void DIskSpace::usdLdsmGetConfig()
     if (settings_list != NULL) {
         //unsigned int i;
         // 清理m_notified_hash中ignoreList存在的。
-        //        QVariant it;
-        //        foreach ( it, ignoreList) {
-        //            qDebug() << it;
-        //            // m_notified_hash.remove(it.key())
-        //        }
-        for (auto i = ignoreList.constBegin(); i != ignoreList.constEnd(); ++i) {
-            qDebug() << "====\n";
+
+        QVariantList::const_iterator it;
+
+        for (it = ignoreList.constBegin(); it != ignoreList.constEnd(); ++it) {
+            m_notified_hash.remove((*it).toString().toLatin1().data());
         }
     }
 }
@@ -684,16 +670,17 @@ void DIskSpace::UsdLdsmClean()
     if (settings) {
         g_object_unref (settings);
     }
-
-    /*if (dialog) {
-            gtk_widget_destroy (GTK_WIDGET (dialog));
-            dialog = NULL;
-    }*/
-
-    //    if (ignore_paths) {
-    //            g_slist_foreach (ignore_paths, (GFunc) g_free, NULL);
-    //            g_slist_free (ignore_paths);
-    //    }
+    /*
+    if (dialog) {
+        delete dialog;
+        dialog = NULL;
+    }
+*/
+    if (ignore_paths) {
+        g_slist_foreach (ignore_paths, (GFunc) g_free, NULL);
+        g_slist_free (ignore_paths);
+        ignore_paths = NULL;
+    }
 }
 
 #ifdef TEST

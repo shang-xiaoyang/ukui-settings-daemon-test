@@ -162,10 +162,9 @@ void HousekeepingManager::purge_thumbnail_cache ()
     purge_data.max_size = settings->get(THUMB_CACHE_KEY_SIZE).toInt() * 1024 * 1024;
 
     /* if both are set to -1, we don't need to read anything */
-    /* 测试临时去掉
     if ((purge_data.max_age < 0) && (purge_data.max_size < 0))
         return;
-    */
+
     path = g_build_filename (g_get_user_cache_dir (),
                              "thumbnails",
                              "normal",
@@ -209,7 +208,6 @@ void HousekeepingManager::purge_thumbnail_cache ()
 void HousekeepingManager::do_cleanup ()
 {
     purge_thumbnail_cache ();
-
 }
 
 void HousekeepingManager::do_cleanup_once ()
