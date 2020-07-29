@@ -21,13 +21,14 @@
 
 #include "housekeeping-manager.h"
 #include "clib-syslog.h"
-
 #include "qtimer.h"
+#include <unistd.h>
+#include <sys/types.h>
 
 /* General */
 #define INTERVAL_ONCE_A_DAY     24*60*60*1000
-//#define INTERVAL_TWO_MINUTES    2*60
-#define INTERVAL_TWO_MINUTES    60*2000
+#define INTERVAL_TWO_MINUTES    1
+//#define INTERVAL_TWO_MINUTES    60*2000
 /* Thumbnail cleaner */
 #define THUMB_CACHE_SCHEMA      "org.mate.thumbnail-cache"
 #define THUMB_CACHE_KEY_AGE     "maximum-age"
@@ -79,6 +80,8 @@ static GList * read_dir_for_purge (const char *path, GList *files)
     GFile           *read_path;
     GFileEnumerator *enum_dir;
 
+    if (opendir(path) == NULL)
+        return files;
     read_path = g_file_new_for_path (path);
     enum_dir = g_file_enumerate_children (read_path,
                                           G_FILE_ATTRIBUTE_STANDARD_NAME ","
@@ -169,14 +172,12 @@ void HousekeepingManager::purge_thumbnail_cache ()
                              NULL);
     files = read_dir_for_purge (path, NULL);
     g_free (path);
-
     path = g_build_filename (g_get_user_cache_dir (),
                              "thumbnails",
                              "large",
                              NULL);
     files = read_dir_for_purge (path, files);
     g_free (path);
-
     path = g_build_filename (g_get_user_cache_dir (),
                              "thumbnails",
                              "fail",
@@ -184,7 +185,6 @@ void HousekeepingManager::purge_thumbnail_cache ()
                              NULL);
     files = read_dir_for_purge (path, files);
     g_free (path);
-
     g_get_current_time (&current_time);
 
     purge_data.now = current_time.tv_sec;
@@ -192,7 +192,6 @@ void HousekeepingManager::purge_thumbnail_cache ()
 
     if (purge_data.max_age >= 0)
         g_list_foreach (files, (GFunc) purge_old_thumbnails, &purge_data);
-
     if ((purge_data.total_size > purge_data.max_size) && (purge_data.max_size >= 0)) {
         GList *scan;
         files = g_list_sort (files, (GCompareFunc) sort_file_mtime);
@@ -202,7 +201,6 @@ void HousekeepingManager::purge_thumbnail_cache ()
             purge_data.total_size -= info->size;
         }
     }
-
     g_list_foreach (files, (GFunc) thumb_data_free, NULL);
     g_list_free (files);
 }
@@ -236,7 +234,7 @@ bool HousekeepingManager::HousekeepingManagerStart()
     mDisk->UsdLdsmSetup(false);
 
     connect (settings,
-             SIGNAL(changed(QString("changeds"))),
+             SIGNAL(changed(QString)),
              this,
              SLOT(settings_changed_callback(QString)));
     /* Clean once, a few minutes after start-up */

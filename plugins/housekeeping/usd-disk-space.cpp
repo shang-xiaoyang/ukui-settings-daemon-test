@@ -20,7 +20,6 @@
 #include "usd-disk-space.h"
 #include <QDebug>
 #include "qtimer.h"
-#include <syslog.h>
 
 #define GIGABYTE                   1024 * 1024 * 1024
 
@@ -297,8 +296,7 @@ bool  DIskSpace::ldsm_mount_has_space (LdsmMountInfo *mount)
     return false;
 }
 
-static bool
-ldsm_mount_is_virtual (LdsmMountInfo *mount)
+static bool ldsm_mount_is_virtual (LdsmMountInfo *mount)
 {
     if (mount->buf.f_blocks == 0) {
         /* Filesystems with zero blocks are virtual */
@@ -308,8 +306,7 @@ ldsm_mount_is_virtual (LdsmMountInfo *mount)
     return false;
 }
 
-static gchar*
-ldsm_get_fs_id_for_path (const gchar *path)
+static gchar* ldsm_get_fs_id_for_path (const gchar *path)
 {
     GFile *file;
     GFileInfo *fileinfo;
@@ -331,8 +328,7 @@ ldsm_get_fs_id_for_path (const gchar *path)
     return attr_id_fs;
 }
 
-static gboolean
-ldsm_mount_has_trash (LdsmMountInfo *mount)
+static gboolean ldsm_mount_has_trash (LdsmMountInfo *mount)
 {
     const gchar *user_data_dir;
     gchar *user_data_attr_id_fs;
@@ -396,8 +392,7 @@ ldsm_mount_has_trash (LdsmMountInfo *mount)
     return has_trash;
 }
 
-static void
-ldsm_analyze_path (const gchar *path)
+static void ldsm_analyze_path (const gchar *path)
 {
     const gchar *argv[] = { DISK_SPACE_ANALYZER, path, NULL };
 
@@ -576,7 +571,6 @@ bool DIskSpace::ldsm_check_all_mounts ()
         mount_info->mount = mount;
 
         path = g_unix_mount_get_mount_path (mount);
-
         if (g_unix_mount_is_readonly (mount)) {
             ldsm_free_mount_info (mount_info);
             continue;
@@ -607,7 +601,6 @@ bool DIskSpace::ldsm_check_all_mounts ()
 
     for (l = check_mounts; l != NULL; l = l->next) {
         LdsmMountInfo *mount_info = (LdsmMountInfo *)l->data;
-
         if (!ldsm_mount_has_space (mount_info)) {
             full_mounts = g_list_prepend (full_mounts, mount_info);
         } else {
@@ -651,7 +644,6 @@ void DIskSpace::UsdLdsmSetup(bool check_now)
         qWarning ("Low disk space monitor already initialized.");
         return;
     }
-
     usdLdsmGetConfig();
     connect(settings,SIGNAL(changes(QString)),this,SLOT(usdLdsmUpdateConfig(QString)));
 #if GLIB_CHECK_VERSION (2, 44, 0)
@@ -662,7 +654,6 @@ void DIskSpace::UsdLdsmSetup(bool check_now)
 #endif
     g_signal_connect (ldsm_monitor, "mounts-changed",
                       G_CALLBACK (DIskSpace::ldsm_mounts_changed), NULL);
-
     if (check_now)
         ldsm_check_all_mounts ();
 
