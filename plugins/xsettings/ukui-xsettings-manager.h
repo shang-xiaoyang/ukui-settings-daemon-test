@@ -21,6 +21,8 @@
 
 #include <glib.h>
 #include <X11/Xatom.h>
+#include <X11/Xcursor/Xcursor.h>
+#include <X11/extensions/Xfixes.h>
 
 #include <glib/gi18n.h>
 #include <gdk/gdk.h>

@@ -50,7 +50,7 @@ MediaKeysManager* MediaKeysManager::mediaKeysNew()
 
 bool MediaKeysManager::mediaKeysStart(GError*)
 {
-        mate_mixer_init();
+    mate_mixer_init();
     QList<GdkScreen*>::iterator l,begin,end;
 
     syslog(LOG_DEBUG,"Starting mediakeys manager!");
@@ -61,6 +61,8 @@ bool MediaKeysManager::mediaKeysStart(GError*)
     mVolumeWindow = new VolumeWindow();
     mDeviceWindow = new DeviceWindow();
     mExecCmd = new QProcess();
+    mManager->mStream = NULL;
+    mManager->mControl = NULL;
 
     mVolumeWindow->initWindowInfo();
     mDeviceWindow->initWindowInfo();
@@ -225,8 +227,10 @@ void MediaKeysManager::updateDefaultOutput()
            control = mate_mixer_stream_get_default_control (stream);
    if (stream == mManager->mStream)
            return;
-   //g_clear_object (&mManager->mStream);
-   //g_clear_object (&mManager->mControl);
+   if(NULL != mManager->mStream)
+   	g_clear_object (&mManager->mStream);
+   if(NULL != mManager->mControl)
+   	g_clear_object (&mManager->mControl);
    
    if (control != NULL) {
            MateMixerStreamControlFlags flags = mate_mixer_stream_control_get_flags (control);
@@ -529,7 +533,7 @@ void MediaKeysManager::doSoundAction(int keyType)
             volume = volumeMin;
             muted = true;
         }else{
-            volume -= volumeStep;
+            volume -= volumeStep * 400;
             muted = false;
         }
         break;
@@ -537,9 +541,9 @@ void MediaKeysManager::doSoundAction(int keyType)
         if(muted){
             muted = false;
             if(volume <= (volumeMin + volumeStep))
-                volume = volumeMin + volumeStep;
+                volume = volumeMin + volumeStep * 400;
         }else
-            volume = midValue(volume + volumeStep, volumeMin, volumeMax);
+            volume = midValue(volume + volumeStep * 400, volumeMin, volumeMax);
         break;
     }
 
