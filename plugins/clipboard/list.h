@@ -23,9 +23,6 @@
 #ifndef LIST_H
 #define LIST_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct _List      List;       
 typedef void (*Callback) (void *data, 
@@ -57,7 +54,4 @@ int   list_length  (List         *list);
 
 List *list_copy    (List         *list);
 
-#ifdef __cplusplus
-}
-#endif
 #endif /* LIST_H */

@@ -1,72 +1,58 @@
-/* -*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
- * -*- coding: utf-8 -*-
+/*
+ * Copyright © 2001 Red Hat, Inc.
  *
- * Copyright (C) 2020 KylinSoft Co., Ltd.
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of Red Hat not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  Red Hat makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * any later version.
+ * RED HAT DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL RED HAT
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN 
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Author:  Owen Taylor, Red Hat, Inc.
  */
-#ifndef XSETTINGSMANAGER_H
-#define XSETTINGSMANAGER_H
+#ifndef XSETTINGS_MANAGER_H
+#define XSETTINGS_MANAGER_H
 
 #include <X11/Xlib.h>
 #include "xsettings-common.h"
 
-typedef void (*XSettingsTerminateFunc)  (int *cb_data);
+typedef struct _XSettingsManager XSettingsManager;
 
-#if defined __cplusplus
-class XsettingsManager
-{
+typedef void (*XSettingsTerminateFunc)  (void *cb_data);
 
-public:
-    XsettingsManager(Display                *display,
-                     int                     screen,
-                     XSettingsTerminateFunc  terminate,
-                     int                   *cb_data);
-    ~XsettingsManager();
+Bool xsettings_manager_check_running (Display *display,
+				      int      screen);
 
-    Window get_window    ();
-    Bool   process_event (XEvent           *xev);
-    XSettingsResult delete_setting (const char       *name);
-    XSettingsResult set_setting    (XSettingsSetting *setting);
-    XSettingsResult set_int        (const char       *name,
-                                    int               value);
-    XSettingsResult set_string     (const char       *name,
-                                    const char       *value);
-    XSettingsResult set_color      (const char       *name,
-                                    XSettingsColor   *value);
-    void setting_store (XSettingsSetting *setting,
-                        XSettingsBuffer *buffer);
-    XSettingsResult notify         ();
+XSettingsManager *xsettings_manager_new (Display                *display,
+					 int                     screen,
+					 XSettingsTerminateFunc  terminate,
+					 void                   *cb_data);
 
-private:
-    Display *display;
-    int screen;
+void   xsettings_manager_destroy       (XSettingsManager *manager);
 
-    Window window;
-    Atom manager_atom;
-    Atom selection_atom;
-    Atom xsettings_atom;
+void   xsettings_manager_delete_setting (XSettingsManager *manager,
+                                         const char       *name);
+void   xsettings_manager_set_int        (XSettingsManager *manager,
+                                         const char       *name,
+                                         int               value);
+void   xsettings_manager_set_string     (XSettingsManager *manager,
+                                         const char       *name,
+                                         const char       *value);
+void   xsettings_manager_set_color      (XSettingsManager *manager,
+                                         const char       *name,
+                                         XSettingsColor   *value);
+void   xsettings_manager_notify         (XSettingsManager *manager);
+void   xsettings_manager_set_overrides  (XSettingsManager *manager,
+                                         GVariant         *overrides);
 
-    XSettingsTerminateFunc terminate;
-    void *cb_data;
-
-    XSettingsList *settings;
-    unsigned long serial;
-};
-
-#endif
-Bool
-xsettings_manager_check_running (Display *display,
-                                 int      screen);
-#endif // XSETTINGSMANAGER_H
+#endif /* XSETTINGS_MANAGER_H */
