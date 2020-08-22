@@ -59,7 +59,7 @@ DIskSpace::DIskSpace()
 
     ldsm_timeout_cb = new QTimer();
     connect(ldsm_timeout_cb, SIGNAL(timeout()), this, SLOT(ldsm_check_all_mounts()));
-
+    ldsm_timeout_cb->start();
     ldsm_monitor = NULL;
     free_percent_notify = 0.05;
     free_percent_notify_again = 0.01;
@@ -535,6 +535,7 @@ bool DIskSpace::ldsm_check_all_mounts ()
      * they're mounted by checking if the GUnixMountPoint has a corresponding GUnixMountEntry.
      * Iterating through the static mounts means we automatically ignore dynamically mounted media.
      */
+    ldsm_timeout_cb->stop();
     mounts = g_unix_mount_points_get (time_read);
 
     for (l = mounts; l != NULL; l = l->next) {

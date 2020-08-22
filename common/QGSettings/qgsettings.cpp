@@ -114,15 +114,15 @@ bool QGSettings::trySet(const QString &key, const QVariant &value)
     return success;
 }
 
-void QGSettings::setEnum(char *key,int value)
+void QGSettings::setEnum(const QString& key,int value)
 {
-    g_settings_set_enum (mPriv->settings,key,value);
+    g_settings_set_enum (mPriv->settings, key.toLatin1().data(), value);
 }
 
-int QGSettings::getEnum(const char *key)
+int QGSettings::getEnum(const QString& key)
 {
     int enumNum;
-    enumNum = g_settings_get_enum (mPriv->settings,key);
+    enumNum = g_settings_get_enum (mPriv->settings,key.toLatin1().data());
     return enumNum;
 }
 

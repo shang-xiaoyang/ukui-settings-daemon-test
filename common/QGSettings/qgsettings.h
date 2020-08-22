@@ -70,7 +70,7 @@ public:
      * 执行写操作后，直接使用g_settings_get_string（）
      * 访问密钥将返回与值关联的'nick'。
      */
-    void setEnum(char *key,int value);
+    void setEnum(const QString& key,int value);
 
     /**
       * 获取存储在key设置中的值，并将其转换为它表示的枚举值。
@@ -78,7 +78,7 @@ public:
       * 给出不包含在设置模式中或未标记为枚举类型的密钥是程序员的错误。
       * 如果配置数据库中存储的值不是该枚举类型的有效值，则此函数将返回默认值。
       */
-    int getEnum(const char *key);
+    int getEnum(const QString& key);
 
     /**
      * g_settings_get()字符串数组的便捷变体。

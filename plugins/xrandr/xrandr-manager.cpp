@@ -369,7 +369,7 @@ bool XrandrManager::ApplyStoredConfigurationAtStartup(XrandrManager *manager,
     return success;
 }
 
-void SetTouchscreenCursorRotation(MateRRScreen *screen)
+void SetTouchscreenCursorRotation(MateRRScreen *screen, QGSettings *settngs)
 {
     /* 添加触摸屏鼠标设置 */
     MateRRConfig *result;
@@ -415,6 +415,7 @@ void SetTouchscreenCursorRotation(MateRRScreen *screen)
             }
         }
     }
+    g_object_unref (result);
 }
 
 /**
@@ -447,15 +448,7 @@ void XrandrManager::OnRandrEvent(MateRRScreen *screen, gpointer data)
             manager->AutoConfigureOutputs (manager, config_timestamp);
     }
     /* 添加触摸屏鼠标设置 */
-    SetTouchscreenCursorRotation(screen);
-}
-
-void XrandrManager::DoesNotSupportThisAngleRotation()
-{
-
-    QMessageBox::warning(nullptr,"not rotation",
-                         "Warning: The screen does not support this angle rotation",
-                         QMessageBox::Ok,QMessageBox::Cancel);
+    SetTouchscreenCursorRotation(screen, manager->mXrandrSetting);
 }
 
 void XrandrManager::RotationChangedEvent(QString key)
@@ -464,30 +457,27 @@ void XrandrManager::RotationChangedEvent(QString key)
     MateRRConfig        *result;
     MateRROutputInfo    **outputs;
     MateRRRotation      rotation;
-    unsigned int change_timestamp, config_timestamp;
+    unsigned int config_timestamp;
     if(key != XRANDR_ROTATION_KEY)
         return;
 
-    angle = mXrandrSetting->get(XRANDR_ROTATION_KEY).toInt();
+    angle = mXrandrSetting->getEnum(XRANDR_ROTATION_KEY);
+    qDebug()<<"angle = "<<angle;
     switch (angle) {
         case 0:
             rotation = MATE_RR_ROTATION_0;
         break;
-        case 90:
+        case 1:
             rotation = MATE_RR_ROTATION_90;
         break;
-        case 180:
+        case 2:
             rotation = MATE_RR_ROTATION_180;
         break;
-        case 270:
+        case 3:
             rotation = MATE_RR_ROTATION_270;
         break;
-        default:
-            DoesNotSupportThisAngleRotation();//提示不支持该角度
-            goto end;
-        break;
     }
-    mate_rr_screen_get_timestamps (mScreen, &change_timestamp, &config_timestamp);
+    mate_rr_screen_get_timestamps (mScreen, nullptr, &config_timestamp);
     result = mate_rr_config_new_current (mScreen, NULL);
     outputs = mate_rr_config_get_outputs (result);
     for (i = 0; outputs[i] != NULL; ++i) {
@@ -497,8 +487,7 @@ void XrandrManager::RotationChangedEvent(QString key)
         }
     }
     mate_rr_config_apply_with_time (result, mScreen, config_timestamp, NULL);
-end:
-    return;
+    g_object_unref (result);
 }
 
 /**
@@ -547,5 +536,5 @@ void XrandrManager::StartXrandrIdleCb()
     ApplyStoredConfigurationAtStartup(this,GDK_CURRENT_TIME);
 
     /* 添加触摸屏鼠标设置 */
-    SetTouchscreenCursorRotation(mScreen);
+    SetTouchscreenCursorRotation(mScreen, mXrandrSetting);
 }

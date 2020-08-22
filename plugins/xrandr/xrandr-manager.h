@@ -69,7 +69,6 @@ public:
                                     const char    *backup_filename,
                                     const char    *intended_filename,
                                     unsigned int   timestamp);
-    void DoesNotSupportThisAngleRotation();
     static void OnRandrEvent (MateRRScreen *screen, gpointer data);
     static void AutoConfigureOutputs (XrandrManager *manager,
                                       unsigned int  timestamp);
