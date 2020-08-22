@@ -46,5 +46,10 @@
       <summary>The xrandr apply window status</summary>
       <description>the xrandr apply window show/notshow when true/false.</description>
     </key>
+    <key name="xrandr-rotations" type = "i">
+      <default>0</default>
+      <summary>Modify the screen rotation angle</summary>
+      <description>Modify the screen rotation angle by value, only 0, 90, 180 and 270 degree rotation</description>
+    </key>
   </schema>
 </schemalist>

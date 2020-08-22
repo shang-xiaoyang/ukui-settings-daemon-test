@@ -18,14 +18,19 @@
  */
 #include <QCoreApplication>
 #include <QApplication>
+#include <QMessageBox>
+
 #include "xrandr-manager.h"
-#include <syslog.h>
+
+#define SETTINGS_XRANDR_SCHEMAS "org.ukui.SettingsDaemon.plugins.xrandr"
+#define XRANDR_ROTATION_KEY     "xrandr-rotations"
 
 XrandrManager *XrandrManager::mXrandrManager = nullptr;
 
 XrandrManager::XrandrManager()
 {
     time = new QTimer(this);
+    mXrandrSetting = new QGSettings(SETTINGS_XRANDR_SCHEMAS);
 }
 
 XrandrManager::~XrandrManager()
@@ -34,10 +39,11 @@ XrandrManager::~XrandrManager()
         delete mXrandrManager;
         mXrandrManager = nullptr;
     }
-    if(time){
+    if(time)
         delete time;
-        time = nullptr;
-    }
+
+    if(mXrandrSetting)
+        delete mXrandrSetting;
 }
 
 XrandrManager* XrandrManager::XrandrManagerNew()
@@ -59,7 +65,7 @@ bool XrandrManager::XrandrManagerStart()
 
 void XrandrManager::XrandrManagerStop()
 {
-    syslog(LOG_ERR,"Xrandr Manager Stop");
+    qDebug("Xrandr Manager Stop");
 }
 
 
@@ -154,7 +160,7 @@ bool XrandrManager::SetScreenSize(Display  *dpy, Window root, int width, int hei
 
     sc = XRRGetScreenInfo (dpy, root);
     if (sc == NULL){
-        syslog(LOG_ERR,"Screen configuration is Null");
+        qDebug("Screen configuration is Null");
         return false;
     }
     /* 配置当前配置 */
@@ -168,13 +174,13 @@ bool XrandrManager::SetScreenSize(Display  *dpy, Window root, int width, int hei
     }
 
     if (size >= nsize) {
-        syslog(LOG_ERR,"Size %dx%d not found in available modes\n", width, height);
+        qDebug("Size %dx%d not found in available modes\n", width, height);
         return false;
     }
     else if (size < 0)
         size = current_size;
     else if (size >= nsize) {
-        syslog(LOG_ERR,"Size index %d is too large, there are only %d sizes\n", size, nsize);
+        qDebug("Size index %d is too large, there are only %d sizes\n", size, nsize);
         return false;
     }
 
@@ -444,6 +450,57 @@ void XrandrManager::OnRandrEvent(MateRRScreen *screen, gpointer data)
     SetTouchscreenCursorRotation(screen);
 }
 
+void XrandrManager::DoesNotSupportThisAngleRotation()
+{
+
+    QMessageBox::warning(nullptr,"not rotation",
+                         "Warning: The screen does not support this angle rotation",
+                         QMessageBox::Ok,QMessageBox::Cancel);
+}
+
+void XrandrManager::RotationChangedEvent(QString key)
+{
+    int angle, i;
+    MateRRConfig        *result;
+    MateRROutputInfo    **outputs;
+    MateRRRotation      rotation;
+    unsigned int change_timestamp, config_timestamp;
+    if(key != XRANDR_ROTATION_KEY)
+        return;
+
+    angle = mXrandrSetting->get(XRANDR_ROTATION_KEY).toInt();
+    switch (angle) {
+        case 0:
+            rotation = MATE_RR_ROTATION_0;
+        break;
+        case 90:
+            rotation = MATE_RR_ROTATION_90;
+        break;
+        case 180:
+            rotation = MATE_RR_ROTATION_180;
+        break;
+        case 270:
+            rotation = MATE_RR_ROTATION_270;
+        break;
+        default:
+            DoesNotSupportThisAngleRotation();//提示不支持该角度
+            goto end;
+        break;
+    }
+    mate_rr_screen_get_timestamps (mScreen, &change_timestamp, &config_timestamp);
+    result = mate_rr_config_new_current (mScreen, NULL);
+    outputs = mate_rr_config_get_outputs (result);
+    for (i = 0; outputs[i] != NULL; ++i) {
+        MateRROutputInfo *info = outputs[i];
+        if (mate_rr_output_info_is_connected (info)) {
+            mate_rr_output_info_set_rotation (info, rotation);
+        }
+    }
+    mate_rr_config_apply_with_time (result, mScreen, config_timestamp, NULL);
+end:
+    return;
+}
+
 /**
  * @brief XrandrManager::StartXrandrIdleCb
  * 开始时间回调函数
@@ -463,6 +520,8 @@ void XrandrManager::StartXrandrIdleCb()
         return;
     }
     g_signal_connect (mScreen, "changed", G_CALLBACK (OnRandrEvent), this);
+
+    connect(mXrandrSetting,SIGNAL(changed(QString)),this,SLOT(RotationChangedEvent(QString)));
 
     /*设置虚拟机分辨率*/
     ScreenNum  = QApplication::screens().length();
