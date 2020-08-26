@@ -116,7 +116,7 @@ bool QGSettings::trySet(const QString &key, const QVariant &value)
 
 void QGSettings::setEnum(const QString& key,int value)
 {
-    g_settings_set_enum (mPriv->settings, key.toLatin1().data(), value);
+    g_settings_set_enum (mPriv->settings,key.toLatin1().data(),value);
 }
 
 int QGSettings::getEnum(const QString& key)
@@ -126,9 +126,9 @@ int QGSettings::getEnum(const QString& key)
     return enumNum;
 }
 
-char **QGSettings::getStrv(const char *key)
+char **QGSettings::getStrv(const QString& key)
 {
-    return g_settings_get_strv(mPriv->settings,key);
+    return g_settings_get_strv(mPriv->settings,key.toLatin1().data());
 }
 
 void QGSettings::delay()
@@ -144,7 +144,8 @@ void QGSettings::apply()
 QStringList QGSettings::keys() const
 {
     QStringList list;
-    gchar **keys = g_settings_list_keys(mPriv->settings);
+    //gchar **keys = g_settings_list_keys(mPriv->settings);
+    gchar **keys = g_settings_schema_list_keys(mPriv->schema);
     for (int i = 0; keys[i]; i++)
         list.append(keys[i]);
 //    list.append(qtify_name(keys[i]));

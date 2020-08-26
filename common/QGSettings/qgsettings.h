@@ -85,7 +85,7 @@ public:
      * 给出一个key 未指定为的架构中的字符串类型数组是程序员的错误settings 。
      * return: 一个新分配的，NULL终止的字符串数组，该值存储在key 中settings
      */
-    char **getStrv(const char *key);
+    char **getStrv(const QString& key);
 
     /**
      *
