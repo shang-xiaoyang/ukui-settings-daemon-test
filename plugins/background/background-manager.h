@@ -42,13 +42,11 @@ public:
     void disconnect_session_manager_listener ();
     static void setup_background (BackgroundManager *manager);
     static bool settings_change_event_cb (GSettings* settings, gpointer keys, gint nKeys, BackgroundManager* manager);
-    static void on_bg_handling_changed (GSettings* settings, const char* key, BackgroundManager* manager);
+    static void onBgHandingChangedSlot (GSettings* settings, const char* key, BackgroundManager* manager);
     void remove_background ();
 
 private Q_SLOTS:
-    void onBgHandingChangedSlot(const QString&);
-    void on_session_manager_signal(QString, bool);
-    void onSessionManagerSignal(GDBusProxy*, const gchar*, const gchar*, GVariant*, gpointer);
+    void onSessionManagerSignal(QString, bool);
     void SettingsChangeEventIdleCb ();
 
 private:
