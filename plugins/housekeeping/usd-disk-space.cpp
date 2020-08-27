@@ -36,7 +36,7 @@
 #define SETTINGS_IGNORE_PATHS             "ignore-paths"
 
 //DIskSpace *DIskSpace::mDisk = nullptr;
-static unsigned long       *time_read;
+static guint64 *time_read;
 QTimer* DIskSpace::ldsm_timeout_cb = NULL;
 
 
@@ -620,11 +620,10 @@ void DIskSpace::ldsm_mounts_changed (GObject  *monitor,gpointer  data)
 
 void DIskSpace::UsdLdsmSetup(bool check_now)
 {
-    if (!m_notified_hash.empty() || !ldsm_timeout_cb || ldsm_monitor) {
+    if (!m_notified_hash.empty() || ldsm_timeout_cb || ldsm_monitor) {
         qWarning ("Low disk space monitor already initialized.");
         return;
     }
-    ldsm_timeout_cb->stop();
     usdLdsmGetConfig();
     connect(settings,SIGNAL(changes(QString)),this,SLOT(usdLdsmUpdateConfig(QString)));
 #if GLIB_CHECK_VERSION (2, 44, 0)
@@ -637,7 +636,7 @@ void DIskSpace::UsdLdsmSetup(bool check_now)
                       G_CALLBACK (DIskSpace::ldsm_mounts_changed), NULL);
     if (check_now)
         ldsm_check_all_mounts ();
-    ldsm_timeout_cb->start(CHECK_EVERY_X_SECONDS);
+    //ldsm_timeout_cb->start(CHECK_EVERY_X_SECONDS);
 
 }
 

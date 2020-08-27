@@ -151,7 +151,7 @@ bool XrandrManager::SetScreenSize(Display  *dpy, Window root, int width, int hei
     Rotation        current_rotation;
     XRRScreenSize   *sizes;
     XRRScreenConfiguration *sc;
-    int     nsize;
+    int     nsize = 0;
     int     size = -1;
     int     rot  = -1;
     short   current_rate;
@@ -174,10 +174,9 @@ bool XrandrManager::SetScreenSize(Display  *dpy, Window root, int width, int hei
     }
 
     if (size >= nsize) {
-        qDebug("Size %dx%d not found in available modes\n", width, height);
+        qWarning("Size %dx%d not found in available modes\n", width, height);
         return false;
-    }
-    else if (size < 0)
+    } else if (size < 0)
         size = current_size;
 
     if (rot < 0) {
@@ -447,6 +446,7 @@ void XrandrManager::OnRandrEvent(MateRRScreen *screen, gpointer data)
     SetTouchscreenCursorRotation(screen, manager->mXrandrSetting);
 }
 
+/*监听旋转键值回调 并设置旋转角度*/
 void XrandrManager::RotationChangedEvent(QString key)
 {
     int angle, i;

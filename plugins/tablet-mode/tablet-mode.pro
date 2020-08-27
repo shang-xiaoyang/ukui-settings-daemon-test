@@ -15,8 +15,8 @@ INCLUDEPATH += \
         -I ukui-settings-daemon/        \
 
 PKGCONFIG += \
-            xrandr x11 gtk+-3.0 \
-            glib-2.0 mate-desktop-2.0
+            xrandr x11 \
+            glib-2.0
 
 SOURCES += \
     tabletMode-manager.cpp \
@@ -27,6 +27,6 @@ HEADERS += \
     tabletMode-plugin.h
 
 tablet_mode_lib.path = $${PLUGIN_INSTALL_DIRS}
-tablet_mode_lib.files = $$PWD/libtablet-mode.so
+tablet_mode_lib.files = $$OUT_PWD/libtablet-mode.so
 
 INSTALLS += tablet_mode_lib
