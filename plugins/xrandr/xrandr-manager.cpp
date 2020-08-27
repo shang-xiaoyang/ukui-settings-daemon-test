@@ -179,10 +179,6 @@ bool XrandrManager::SetScreenSize(Display  *dpy, Window root, int width, int hei
     }
     else if (size < 0)
         size = current_size;
-    else if (size >= nsize) {
-        qDebug("Size index %d is too large, there are only %d sizes\n", size, nsize);
-        return false;
-    }
 
     if (rot < 0) {
         for (rot = 0; rot < 4; rot++)

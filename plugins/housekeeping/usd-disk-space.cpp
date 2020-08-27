@@ -136,16 +136,11 @@ void DIskSpace::usdLdsmGetConfig()
     // 取得清理忽略的目录
     //settings_list =settings->getStrv(SETTINGS_IGNORE_PATHS);
     QVariantList ignoreList = settings->choices(SETTINGS_IGNORE_PATHS);
-    if (ignoreList.first().data() != nullptr) {
-        //unsigned int i;
-        // 清理m_notified_hash中ignoreList存在的。
-
-        QVariantList::const_iterator it;
-
-        for (it = ignoreList.constBegin(); it != ignoreList.constEnd(); ++it) {
-            m_notified_hash.remove((*it).toString().toLatin1().data());
-        }
+    QVariantList::const_iterator it;
+    for (it = ignoreList.constBegin(); it != ignoreList.constEnd(); ++it) {
+        m_notified_hash.remove((*it).toString().toLatin1().data());
     }
+
 }
 
 static void
