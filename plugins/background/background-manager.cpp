@@ -118,7 +118,7 @@ void BackgroundManager::on_screen_size_changed (GdkScreen* screen, BackgroundMan
     scr_num = gdk_x11_screen_get_screen_number (screen);
     oldSize = (gchar*)g_list_nth_data (manager->mScrSizes, scr_num);
     newSize = g_strdup_printf ("%dx%d", WidthOfScreen (xscreen) / scale, HeightOfScreen (xscreen) / scale);
-    qDebug("oldSize = %s, newSize=%s, scale=%d",oldSize, newSize, scale);
+    //qDebug("oldSize = %s, newSize=%s, scale=%d",oldSize, newSize, scale);
     if (g_strcmp0 (oldSize, newSize) != 0)
     {
         qDebug("Screen size changed: %s -> %s", oldSize, newSize);
@@ -129,27 +129,22 @@ void BackgroundManager::on_screen_size_changed (GdkScreen* screen, BackgroundMan
     g_free (newSize);
 }
 
+void BackgroundManager::callBackDrow(){
+    mCallCount++;
+    if(mCallCount == 2){
+        GdkScreen *screen = gdk_screen_get_default();
+        on_screen_size_changed(screen,this);
+        mCallCount = 0;
+    }
+}
+
 void connect_screen_signals (BackgroundManager* manager)
 {
-    GdkScreen *screen = gdk_screen_get_default();
-    //    g_signal_connect (screen, "size-changed", G_CALLBACK (on_screen_size_changed), manager););
     QDBusConnection::sessionBus().connect(QString(),
                                           QString("/backend"),
                                           "org.kde.kscreen.Backend","configChanged",
                                           manager,
                                           SLOT(callBackDrow()));
-
-}
-void BackgroundManager::callBackDrow(){
-    mCallCount++;
-    if(mCallCount == 2){
-        GdkScreen *qscreen = gdk_screen_get_default();
-        QScreen *screenx = QApplication::primaryScreen();
-        QRect rect =screenx->availableGeometry() ;
-        qDebug()<<"width:"<<rect.width()<<"height:"<<rect.height();
-        on_screen_size_changed(qscreen,this);
-        mCallCount = 0;
-    }
 }
 
 void on_bg_changed (MateBG*, BackgroundManager* manager)
@@ -311,7 +306,7 @@ void real_draw_bg (BackgroundManager* manager, GdkScreen* screen)
 	int width   = WidthOfScreen (gdk_x11_screen_get_xscreen (screen)) / scale;
 	int height  = HeightOfScreen (gdk_x11_screen_get_xscreen (screen)) / scale;
     free_bg_surface (manager);
-    qDebug("width = %d, height=%d, scale=%d",width, height, scale);
+    //qDebug("width = %d, height=%d, scale=%d",width, height, scale);
     manager->mSurface = mate_bg_create_surface_scale (manager->mMateBG, window, width,
                                                       height, scale, TRUE);
 
@@ -333,14 +328,9 @@ void free_bg_surface (BackgroundManager* manager)
     }
 }
 
-void disconnect_screen_signals (BackgroundManager* manager)
-{
-//    on_screen_size_changed(gdk_screen_get_default(), manager);
-}
-
 void BackgroundManager::remove_background ()
 {
-    disconnect_screen_signals (this);
+
     g_signal_handlers_disconnect_by_func (mSetting, (gpointer)settings_change_event_cb, this);
 
     if (nullptr != mSetting) {
@@ -388,9 +378,8 @@ bool BackgroundManager::managerStart()
     if (mUsdCanDraw) {
         if (mPeonyCanDraw) {
             draw_bg_after_session_loads ();
-        } else {
-            setup_background (this);
         }
+        setup_background (this);
     }
     return true;
 }
