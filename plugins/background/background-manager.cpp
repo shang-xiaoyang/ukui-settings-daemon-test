@@ -44,6 +44,7 @@ BackgroundManager::BackgroundManager(QObject *parent) : QObject(parent)
     mScrSizes= nullptr;
     mDbusInterface = nullptr;
     mTime   = new QTimer(this);
+    mCallCount = 0;
 }
 
 BackgroundManager::~BackgroundManager()
@@ -100,7 +101,7 @@ void queue_timeout (BackgroundManager* manager)
     manager->setup_background (manager);
 }
 
-void on_screen_size_changed (GdkScreen* screen, BackgroundManager* manager)
+void BackgroundManager::on_screen_size_changed (GdkScreen* screen, BackgroundManager* manager)
 {
     if (!manager->mUsdCanDraw || manager->mDrawInProgress || peony_is_drawing_bg (manager))
         return;
@@ -131,9 +132,25 @@ void on_screen_size_changed (GdkScreen* screen, BackgroundManager* manager)
 void connect_screen_signals (BackgroundManager* manager)
 {
     GdkScreen *screen = gdk_screen_get_default();
-    g_signal_connect (screen, "size-changed", G_CALLBACK (on_screen_size_changed), manager);
-}
+    //    g_signal_connect (screen, "size-changed", G_CALLBACK (on_screen_size_changed), manager););
+    QDBusConnection::sessionBus().connect(QString(),
+                                          QString("/backend"),
+                                          "org.kde.kscreen.Backend","configChanged",
+                                          manager,
+                                          SLOT(callBackDrow()));
 
+}
+void BackgroundManager::callBackDrow(){
+    mCallCount++;
+    if(mCallCount == 2){
+        GdkScreen *qscreen = gdk_screen_get_default();
+        QScreen *screenx = QApplication::primaryScreen();
+        QRect rect =screenx->availableGeometry() ;
+        qDebug()<<"width:"<<rect.width()<<"height:"<<rect.height();
+        on_screen_size_changed(qscreen,this);
+        mCallCount = 0;
+    }
+}
 
 void on_bg_changed (MateBG*, BackgroundManager* manager)
 {
@@ -318,7 +335,7 @@ void free_bg_surface (BackgroundManager* manager)
 
 void disconnect_screen_signals (BackgroundManager* manager)
 {
-    on_screen_size_changed(gdk_screen_get_default(), manager);
+//    on_screen_size_changed(gdk_screen_get_default(), manager);
 }
 
 void BackgroundManager::remove_background ()
