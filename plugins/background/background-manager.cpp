@@ -64,7 +64,7 @@ BackgroundManager* BackgroundManager::getInstance()
 void BackgroundManager::onSessionManagerSignal(QString signalName,bool res)
 {
     if (signalName == "SessionRunning") {
-        queue_timeout (this);
+//        queue_timeout (this);
         disconnect_session_manager_listener ();
     }
 }
@@ -365,7 +365,7 @@ bool BackgroundManager::managerStart()
 
     mUsdCanDraw = g_settings_get_boolean (mSetting, MATE_BG_KEY_DRAW_BACKGROUND);
     mPeonyCanDraw = g_settings_get_boolean (mSetting, MATE_BG_KEY_SHOW_DESKTOP);
-
+    queue_timeout (this);
     g_signal_connect (mSetting, "changed::" MATE_BG_KEY_DRAW_BACKGROUND,
                   G_CALLBACK (onBgHandingChangedSlot), this);
     g_signal_connect (mSetting, "changed::" MATE_BG_KEY_SHOW_DESKTOP,
